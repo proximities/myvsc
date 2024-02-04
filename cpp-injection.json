@@ -1,0 +1,36 @@
+{
+    "scopeName": "cpp.injection",
+    "injectionSelector": "L:source.cpp -comment",
+    "patterns": [
+        { "include": "#windows_macros" },
+        { "include": "#null" },
+        { "include": "#TITLE" },
+        { "#include": "#d3d" }
+    ],
+    "repository": {
+        "windows_macros": {
+            "patterns": [
+                {
+                    "match": "\\b(WS|CW)_\\w+\\b",
+                    "name": "meta.preprocessor.macro.cpp"
+                }
+            ]
+        },
+        "null": {
+            "patterns": [
+                {
+                    "match": "\\bnull\\b",
+                    "name": "meta.preprocessor.macro.cpp"
+                }
+            ]
+        },
+        "TITLE": {
+            "patterns": [
+                {
+                    "match": "\\bTITLE\\b",
+                    "name": "meta.preprocessor.macro.cpp"
+                }
+            ]
+        }
+    }
+}

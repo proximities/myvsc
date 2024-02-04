@@ -1,0 +1,26 @@
+{
+    "scopeName": "hlsl.injection",
+    "injectionSelector": "L:source.hlsl -comment",
+    "patterns": [
+        { "include": "#objects" },
+        { "include": "#types" }
+    ],
+    "repository": {
+        "objects": {
+            "patterns": [
+                {
+                    "match": "\\b(StructuredBuffer|vertex)\\b",
+                    "name": "support.type.object.hlsl"
+                }
+            ]
+        },
+        "types": {
+            "patterns": [
+                {
+                    "match": "\\b(vec|mat)(1|2|3|4)\\b",
+                    "name": "storage.type.basic.hlsl"
+                }
+            ]
+        }
+    }
+}
