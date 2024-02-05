@@ -1,9 +1,8 @@
 {
-    "name": "helloworld-minimal-sample",
-    "description": "Minimal HelloWorld example for VS Code",
+    "name": "vscode-utils",
+    "description": "pbl vscode utils",
     "version": "0.0.1",
     "publisher": "vscode-samples",
-    "repository": "https://github.com/Microsoft/vscode-extension-samples/helloworld-minimal-sample",
     "engines": {
         "vscode": "^1.74.0"
     },
@@ -12,16 +11,24 @@
     "contributes": {
         "commands": [
             {
-                "command": "extension.addDefineStatement",
-                "title": "add define statement"
+                "command": "extension.substitute",
+                "title": "MyVSC: d3d11 substitute"
             },
             {
-                "command": "extension.removeBuildFolder",
-                "title": "remove build folder"
+                "command": "extension.removeBuildArtifacts",
+                "title": "MyVSC: remove build artifacts"
             },
             {
-                "command": "extension.makeGameCodeReadable",
-                "title": "make game code readable"
+                "command": "extension.replaceUuids",
+                "title": "MyVSC: replace uuids with IID_PPV_ARGS"
+            },
+            {
+                "command": "extension.cleanupCppHeader",
+                "title": "MyVSC: cleanup cpp header"
+            },
+            {
+                "command": "extension.toggleSubsystemWindows",
+                "title": "MyVSC: toggle subsystem windows (WinMain)"
             }
         ],
         "grammars": [
@@ -46,6 +53,8 @@
         "@types/vscode": "^1.73.0"
     },
     "dependencies": {
-        "vscode-ext-selection": "^1.0.1"
+        "comment-json": "^4.2.3",
+        "vscode-ext-selection": "^1.0.1",
+        "vscode-textmate-languageservice": "^3.0.0"
     }
 }
