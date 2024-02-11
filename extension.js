@@ -277,13 +277,13 @@ function activate(context) {
         if (index == -1) {
             // insert @ beginning
             args.unshift("/Zi");
-            ZiStatusBarItem.text = "Zi: ON";
+            ZiStatusBarItem.text = "Zi: On";
             ZiStatusBarItem.show();
 
             // showInformationMessage('Added /Zi');
         } else {
             args.splice(index, 1);
-            ZiStatusBarItem.text = "Zi: OFF";
+            ZiStatusBarItem.text = "Zi: Off";
             ZiStatusBarItem.show();
             // showInformationMessage('Removed /Zi');
         }
@@ -308,12 +308,12 @@ function activate(context) {
         if (index == -1) {
             // insert @ beginning
             args.unshift("/O2");
-            O2StatusBarItem.text = "O2: ON";
+            O2StatusBarItem.text = "O2: On";
             O2StatusBarItem.show();
             // showInformationMessage("Added /O2");
         } else {
             args.splice(index, 1);
-            O2StatusBarItem.text = "O2: OFF";
+            O2StatusBarItem.text = "O2: Off";
             O2StatusBarItem.show();
             // showInformationMessage("Removed /O2");
         }
