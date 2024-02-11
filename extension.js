@@ -1,158 +1,143 @@
-let vscode = require("vscode");
-let { showInformationMessage } = vscode.window;
-let { registerCommand, executeCommand } = vscode.commands;
-let { selectWordAtCursorPosition } = require("vscode-ext-selection");
-let tm = require("vscode-textmate-languageservice");
-// json parsing
+const vscode = require("vscode");
+const { showInformationMessage, createStatusBarItem } = vscode.window;
+const { registerCommand } = vscode.commands;
 
-let { parse, stringify, assign } = require("comment-json");
+// json parsing (default parsing doesn't work with comments)
+const { parse, stringify } = require("comment-json");
 
-let assert = require("assert");
-let fs = require("fs");
-let path = require("path");
+const fs = require("fs");
+const path = require("path");
+const registerSubstitute = require("./substitute");
+const registerRemoveBuildArtifacts = require("./remove-build-artifacts");
 
-// let registerCommand = vscode.commands.registerCommand;
+// lsp
+const { LanguageClient, LanguageClientOptions, ServerOptions, TransportKind } = require("vscode-languageclient/node");
 
-// t { selectWordAtCursorPosition } = require('selectWordAtCursorPosition');
-
-// import { selectWordAtCursorPosition } from "vscode-ext-selection";
-
-const getWord = () => {
-    const editor = vscode.window.activeTextEditor;
-
-    selectWordAtCursorPosition(editor);
-    const word = editor.document.getText(editor.selection);
-    return word;
-};
-
-function escapeRegExp(string) {
-    return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); // $& means the whole matched string
-}
 
 let O2StatusBarItem;
 let ZiStatusBarItem;
+let SubsystemWindowsStatusBarItem;
+let ArgsStatusBarItem;
+
+function updateO2StatusBarItem() {
+    let o2Index = findTaskArgs().indexOf("/O2");
+    O2StatusBarItem.text = "O2: " + (o2Index == -1 ? "Off" : "On");
+    O2StatusBarItem.show();
+}
+
+function updateZiStatusBarItem() {
+    let ziIndex = findTaskArgs().indexOf("/Zi");
+    ZiStatusBarItem.text = "Zi: " + (ziIndex == -1 ? "Off" : "On");
+    ZiStatusBarItem.show();
+}
+
+function updateSubsystemWindowsStatusBarItem() {
+    let subsystemIndex = findTaskArgs().indexOf("/subsystem:windows");
+    SubsystemWindowsStatusBarItem.text = "Subsystem: " + (subsystemIndex == -1 ? "Console" : "Windows");
+    SubsystemWindowsStatusBarItem.show();
+}
+
+function updateArgsStatusBarItem() {
+    ArgsStatusBarItem.text = "Cmdline Args: " + findLaunchArgs()?.join(" ");
+    ArgsStatusBarItem.show();
+}
 
 /**
  * @param {vscode.ExtensionContext} context
  */
 function activate(context) {
-    O2StatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 10000);
-    let o2Index = findO2();
-    O2StatusBarItem.text = "O2: " + (o2Index == -1 ? "Off" : "On");
-    O2StatusBarItem.command = "extension.toggleO2";
-    O2StatusBarItem.show();
+    // check if there exists a tasks.json with first task type == cppbuild
+    let workspacePath = vscode.workspace.workspaceFolders;
+    if (!workspacePath) return;
+    workspacePath = workspacePath[0].uri.fsPath;
+    let tasksPath = path.join(workspacePath, ".vscode", "tasks.json");
+    let exists = fs.existsSync(tasksPath) && parse(fs.readFileSync(tasksPath, "utf-8"))?.tasks[0]?.type == "cppbuild";
+    if (!exists) return;
+    // check if there exists a launch.json with first configuration type == cppvsdbg
+    let launchPath = path.join(workspacePath, ".vscode", "launch.json");
+    exists = fs.existsSync(launchPath) && parse(fs.readFileSync(launchPath, "utf-8"))?.configurations[0]?.type == "cppvsdbg";
+    if (!exists) return;
 
-    ZiStatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 10000);
-    let ziIndex = findZi();
-    ZiStatusBarItem.text = "Zi: " + (ziIndex == -1 ? "Off" : "On");
+    // // The server is implemented in node
+    // const serverModule = context.asAbsolutePath(path.join("server", "out", "server.js"));
+    // // If the extension is launched in debug mode then the debug server options are used
+    // // Otherwise the run options are used
+    // const serverOptions = {
+    //     run: { module: serverModule, transport: node_1.TransportKind.ipc },
+    //     debug: {
+    //         module: serverModule,
+    //         transport: node_1.TransportKind.ipc,
+    //     },
+    // };
+    // // Options to control the language client
+    // const clientOptions = {
+    //     // Register the server for plain text documents
+    //     documentSelector: [{ scheme: "file", language: "plaintext" }],
+    //     synchronize: {
+    //         // Notify the server about file changes to '.clientrc files contained in the workspace
+    //         fileEvents: vscode_1.workspace.createFileSystemWatcher("**/.clientrc"),
+    //     },
+    // };
+    // // Create the language client and start the client.
+    // client = new node_1.LanguageClient("languageServerExample", "Language Server Example", serverOptions, clientOptions);
+    // // Start the client. This will also launch the server
+ 	// The server is implemented in node
+
+	// const serverModule = context.asAbsolutePath(
+	// 	path.join('server.js')
+	// );
+
+	// // If the extension is launched in debug mode then the debug server options are used
+	// // Otherwise the run options are used
+	// const serverOptions = {
+	// 	run: { module: serverModule, transport: TransportKind.ipc },
+	// 	debug: {
+	// 		module: serverModule,
+	// 		transport: TransportKind.ipc,
+	// 	}
+	// };
+
+	// // Options to control the language client
+	// const clientOptions = {
+	// 	// Register the server for plain text documents
+	// 	documentSelector: [{ scheme: 'file', language: 'pbl' }],
+	// 	synchronize: {
+	// 		// Notify the server about file changes to '.clientrc files contained in the workspace
+	// 		fileEvents: workspace.createFileSystemWatcher('**/.clientrc')
+	// 	}
+	// };
+
+	// // Create the language client and start the client.
+	// client = new LanguageClient(
+	// 	'languageServerExample',
+	// 	'Language Server Example',
+	// 	serverOptions,
+	// 	clientOptions
+	// );
+
+	// Start the client. This will also launch the server
+	// client.start();   // client.start();
+
+    O2StatusBarItem = createStatusBarItem(vscode.StatusBarAlignment.Right, 10000);
+    O2StatusBarItem.command = "extension.toggleO2";
+    updateO2StatusBarItem();
+
+    ZiStatusBarItem = createStatusBarItem(vscode.StatusBarAlignment.Right, 10000);
     ZiStatusBarItem.command = "extension.toggleZi";
-    ZiStatusBarItem.show();
+    updateZiStatusBarItem();
+
+    SubsystemWindowsStatusBarItem = createStatusBarItem(vscode.StatusBarAlignment.Right, 10000);
+    SubsystemWindowsStatusBarItem.command = "extension.toggleSubsystemWindows";
+    updateSubsystemWindowsStatusBarItem();
+
+    ArgsStatusBarItem = createStatusBarItem(vscode.StatusBarAlignment.Right, 10000);
+    ArgsStatusBarItem.command = "extension.changeArgs";
+    updateArgsStatusBarItem();
 
     console.log('Congratulations, your extension "helloworld-minimal-sample" is now active!');
 
-    registerCommand("extension.substitute", async () => {
-        const editor = vscode.window.activeTextEditor;
-        assert(editor, "ERROR: No active text editor");
-
-        const range = editor.document.getWordRangeAtPosition(
-            // get current position of the cursor
-            editor.selection.active
-        );
-
-        // print active
-        showInformationMessage(editor.selection.active.line + " " + editor.selection.active.character);
-
-        let selection = editor.document.getText(range); // get the word at the range
-
-        let short = "";
-        let replace = "";
-
-        if (selection.startsWith("ID3D") || selection.startsWith("IDXGI") || selection.startsWith("ID3D11")) {
-            // get the shortened name
-            short = selection.replace("ID3D11", "").replace("IDXGI", "").replace("ID3D", "");
-            selection += " *";
-
-            replace = `using ${short} = ${selection};\n`;
-        } else {
-            // first case: to shorten names in general
-            if (selection.indexOf("_") != -1) {
-                // get the shortened name
-                short = selection.substring(selection.indexOf("_") + 1);
-                // check if short ends like DESC[0-9]?
-                // using regex
-
-                // provide a popup to select whether to use pascal case or not
-                // two options: PascalCase, MACRO_CASE
-
-                let option = await vscode.window.showQuickPick(["using statement", "#define statement"], {
-                    placeHolder: "Select the case",
-                });
-
-                if (option == "using statement") {
-                    // short = short.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join('');
-                    replace = `using ${short} = ${selection};\n`;
-                } else {
-                    replace = `#define ${short} ${selection}\n`;
-                }
-            } else {
-                // just a function
-                short = selection.replace("D3D11", "").replace("DXGI", "").replace("D3D", "");
-
-                replace = `#define ${short} ${selection}\n`;
-            }
-        }
-
-        // add the replace statement
-        let edit = new vscode.WorkspaceEdit();
-
-        let text = editor.document.getText();
-        text = text.replace(new RegExp("\\b" + escapeRegExp(selection) + "\\b", "g"), short + " ");
-        edit.replace(editor.document.uri, new vscode.Range(0, 0, editor.document.lineCount, 0), text);
-
-        // isnert on the first line
-        edit.insert(editor.document.uri, new vscode.Position(1, 0), replace);
-        // also replace the type with the shortened name
-        vscode.workspace.applyEdit(edit);
-
-        // print the shortened name
-        showInformationMessage(`shortened ${selection} to ${short}`);
-    });
-
-    registerCommand("extension.removeBuildArtifacts", async () => {
-        // first stop all terminals and wait
-        await vscode.commands.executeCommand("workbench.action.terminal.kill");
-
-        let workspacePath = vscode.workspace.workspaceFolders[0].uri.fsPath;
-        let buildPaths = [path.join(workspacePath, "build"), path.join(workspacePath, "out")];
-        for (p of buildPaths) {
-            if (fs.existsSync(p)) {
-                fs.rmdirSync(p, {
-                    recursive: true,
-                });
-            }
-        }
-
-        // also remove all *.exe, *.dll, *.lib, *.pdb, *.ilk, *.exp, *.obj, *.idb, *.ipdb, *.iobj, *.log
-        // readdirSync isn't recursive
-        let files = fs.readdirSync(workspacePath);
-        let artifacts = files.filter(
-            (f) =>
-                f.endsWith(".exe") ||
-                f.endsWith(".dll") ||
-                f.endsWith(".lib") ||
-                f.endsWith(".pdb") ||
-                f.endsWith(".ilk") ||
-                f.endsWith(".exp") ||
-                f.endsWith(".obj") ||
-                f.endsWith(".idb") ||
-                f.endsWith(".ipdb") ||
-                f.endsWith(".iobj") ||
-                f.endsWith(".log")
-        );
-        for (a of artifacts) {
-            fs.unlinkSync(path.join(workspacePath, a));
-        }
-    });
+    registerSubstitute();
+    registerRemoveBuildArtifacts();
 
     // __uuidof -> IID_PPV_ARGS
     registerCommand("extension.replaceUuids", () => {
@@ -172,71 +157,6 @@ function activate(context) {
         }
     });
 
-    registerCommand("extension.cleanupCppHeader", () => {
-        let editor = vscode.window.activeTextEditor;
-        // replace BOOL with int (with word boundary)
-        let edit = new vscode.WorkspaceEdit();
-        // get selected text, if null then select all
-        let text = editor.document.getText(editor.selection);
-        if (!text) {
-            text = editor.document.getText();
-        }
-        showInformationMessage(text);
-        // https://www.freecodecamp.org/news/regular-expressions-for-beginners/
-        text = text.replace(/\bBOOL\b/g, "int");
-        text = text.replace(/\bLONG\b/g, "int");
-        text = text.replace(/\bDWORD\b/g, "int");
-        text = text.replace(/\bUINT\b/g, "int");
-        text = text.replace(/\bULONG\b/g, "int");
-        // replace long with int
-        text = text.replace(/\blong\b/g, "int");
-        // don't forget to #define long long long
-        text = text.replace(/\bLRESULT\b/g, "long");
-        text = text.replace(/\bWPARAM\b/g, "long");
-        text = text.replace(/\bLPARAM\b/g, "long");
-        text = text.replace(/\bLPVOID\b/g, "void *");
-        text = text.replace(/\bLPCVOID\b/g, "const void *");
-        text = text.replace(/\bLPCSTR\b/g, "const char *");
-        text = text.replace(/\bLPCWSTR\b/g, "const wchar_t *");
-        text = text.replace(/\bLPSTR\b/g, "char *");
-        text = text.replace(/\bLPWSTR\b/g, "wchar_t *");
-        text = text.replace(/\bLPCTSTR\b/g, "const char *");
-        text = text.replace(/\bLPTSTR\b/g, "char *");
-        text = text.replace(/\bHANDLE\b/g, "void *");
-        text = text.replace(/\bHINSTANCE\b/g, "void *");
-        text = text.replace(/\bHRESULT\b/g, "long");
-        text = text.replace(/\bHWND\b/g, "void *");
-        text = text.replace(/\bATOM\b/g, "short");
-        text = text.replace(/\bHMODULE\b/g, "void *");
-        text = text.replace(/\bHKEY\b/g, "void *");
-        text = text.replace(/\bHDC\b/g, "void *");
-        text = text.replace(/\bHBRUSH\b/g, "void *");
-        text = text.replace(/\bHFONT\b/g, "void *");
-        text = text.replace(/\bHICON\b/g, "void *");
-        text = text.replace(/\bHCURSOR\b/g, "void *");
-        text = text.replace(/\bHMENU\b/g, "void *");
-        text = text.replace(/\bWINAPI\b/g, "");
-        text = text.replace(/\bCALLBACK\b/g, "");
-        text = text.replace(/\bAPIENTRY\b/g, "");
-        text = text.replace(/\bSHORT\b/g, "short");
-        text = text.replace(/\bWORD\b/g, "short");
-        text = text.replace(/\bBYTE\b/g, "char");
-        text = text.replace(/\bLPMSG\b/g, "MSG *");
-        // find hex numbers and replace them with lowercase. also remove the L at the end if it exists
-        text = text.replace(/\b0x[0-9A-F]+L\b/g, (match) => match.toLowerCase().replace("l", ""));
-        // replace typedef enum, typedef struct, typedef union
-        text = text.replace(/\btypedef enum\b/g, "enum");
-        text = text.replace(/\btypedef struct\b/g, "struct");
-        text = text.replace(/\btypedef union\b/g, "union");
-
-        // replace DECLSPEC_XFGVIRT(.*)
-        text = text.replace(/DECLSPEC_XFGVIRT\((.*)\)/g, "");
-
-        console.log(text);
-        edit.replace(editor.document.uri, new vscode.Range(0, 0, editor.document.lineCount, 0), text);
-        vscode.workspace.applyEdit(edit);
-    });
-
     registerCommand("extension.toggleSubsystemWindows", () => {
         // find .vscode/tasks.json
         // replace the subsystem with windows
@@ -254,12 +174,12 @@ function activate(context) {
         let index = args.indexOf("/subsystem:windows");
         if (index == -1) {
             args.push("/subsystem:windows");
-            showInformationMessage("Added /subsystem:windows");
         } else {
             args.splice(index, 1);
-            showInformationMessage("Removed /subsystem:windows");
         }
         fs.writeFileSync(tasksPath, stringify(tasks, null, 4));
+
+        updateSubsystemWindowsStatusBarItem();
     });
 
     // toggle Zi
@@ -275,19 +195,13 @@ function activate(context) {
         // find the /Zi
         let index = args.indexOf("/Zi");
         if (index == -1) {
-            // insert @ beginning
             args.unshift("/Zi");
-            ZiStatusBarItem.text = "Zi: On";
-            ZiStatusBarItem.show();
-
-            // showInformationMessage('Added /Zi');
         } else {
             args.splice(index, 1);
-            ZiStatusBarItem.text = "Zi: Off";
-            ZiStatusBarItem.show();
-            // showInformationMessage('Removed /Zi');
         }
         fs.writeFileSync(tasksPath, stringify(tasks, null, 4));
+
+        updateZiStatusBarItem();
     });
 
     // toggle O2
@@ -306,47 +220,51 @@ function activate(context) {
         // find the /O2
         let index = args.indexOf("/O2");
         if (index == -1) {
-            // insert @ beginning
             args.unshift("/O2");
-            O2StatusBarItem.text = "O2: On";
-            O2StatusBarItem.show();
-            // showInformationMessage("Added /O2");
         } else {
             args.splice(index, 1);
-            O2StatusBarItem.text = "O2: Off";
-            O2StatusBarItem.show();
-            // showInformationMessage("Removed /O2");
         }
         fs.writeFileSync(tasksPath, stringify(tasks, null, 4));
+
+        updateO2StatusBarItem();
+    });
+
+    registerCommand("extension.changeArgs", async () => {
+        let workspacePath = vscode.workspace.workspaceFolders[0].uri.fsPath;
+        let launchPath = path.join(workspacePath, ".vscode", "launch.json");
+
+        let launch = parse(fs.readFileSync(launchPath, "utf-8"));
+
+        let args = launch.configurations[0].args;
+
+        let newArgs = await vscode.window.showInputBox({
+            placeHolder: "Enter the new args",
+            value: args?.join(" "),
+        });
+        // check if the user pressed cancel
+        if (!newArgs) return;
+
+        launch.configurations[0].args = newArgs.split(" ");
+        fs.writeFileSync(launchPath, stringify(launch, null, 4));
+
+        updateArgsStatusBarItem();
     });
 }
 
-// function to find Zi in tasks.json
-const findZi = () => {
+// function to find the args in tasks.json
+const findTaskArgs = () => {
     let workspacePath = vscode.workspace.workspaceFolders[0].uri.fsPath;
     let tasksPath = path.join(workspacePath, ".vscode", "tasks.json");
-
-    // read the tasks.json
     let tasks = parse(fs.readFileSync(tasksPath, "utf-8"));
-
-    // get the array tasks[0].args
-    let args = tasks.tasks[0].args;
-    // find the /Zi
-    return args.indexOf("/Zi");
+    return tasks.tasks[0].args;
 };
 
-// function to find O2 in tasks.json
-const findO2 = () => {
+// function to find the args in launch.json
+const findLaunchArgs = () => {
     let workspacePath = vscode.workspace.workspaceFolders[0].uri.fsPath;
-    let tasksPath = path.join(workspacePath, ".vscode", "tasks.json");
-
-    // read the tasks.json
-    let tasks = parse(fs.readFileSync(tasksPath, "utf-8"));
-
-    // get the array tasks[0].args
-    let args = tasks.tasks[0].args;
-    // find the /O2
-    return args.indexOf("/O2");
+    let launchPath = path.join(workspacePath, ".vscode", "launch.json");
+    let launch = parse(fs.readFileSync(launchPath, "utf-8"));
+    return launch.configurations[0].args;
 };
 
 function deactivate() {}

@@ -6,7 +6,9 @@
     "engines": {
         "vscode": "^1.74.0"
     },
-    "activationEvents": ["onStartupFinished"],
+    "activationEvents": [
+        "onStartupFinished"
+    ],
     "main": "./extension.js",
     "contributes": {
         "commands": [
@@ -37,6 +39,10 @@
             {
                 "command": "extension.toggleO2",
                 "title": "MyVSC: toggle /O2"
+            },
+            {
+                "command": "extension.changeArgs",
+                "title": "MyVSC: change args"
             }
         ],
         "grammars": [
@@ -62,7 +68,6 @@
     },
     "dependencies": {
         "comment-json": "^4.2.3",
-        "vscode-ext-selection": "^1.0.1",
-        "vscode-textmate-languageservice": "^3.0.0"
+        "vscode-languageclient": "^9.0.1"
     }
 }
