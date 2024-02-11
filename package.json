@@ -6,7 +6,7 @@
     "engines": {
         "vscode": "^1.74.0"
     },
-    "activationEvents": [],
+    "activationEvents": ["onStartupFinished"],
     "main": "./extension.js",
     "contributes": {
         "commands": [
@@ -29,6 +29,14 @@
             {
                 "command": "extension.toggleSubsystemWindows",
                 "title": "MyVSC: toggle subsystem windows (WinMain)"
+            },
+            {
+                "command": "extension.toggleZi",
+                "title": "MyVSC: toggle /Zi"
+            },
+            {
+                "command": "extension.toggleO2",
+                "title": "MyVSC: toggle /O2"
             }
         ],
         "grammars": [
