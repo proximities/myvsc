@@ -9,33 +9,34 @@ const fs = require("fs");
 const path = require("path");
 const registerSubstitute = require("./substitute");
 const registerRemoveBuildArtifacts = require("./remove-build-artifacts");
+const tokens = require(String.raw`C:\Users\pblpbl\code\game\tokenizer.js`);
 
-let O2StatusBarItem;
-let ZiStatusBarItem;
-let SubsystemWindowsStatusBarItem;
-let ArgsStatusBarItem;
+let O2;
+let Zi;
+let SubsystemWindows;
+let Args;
 
-function updateO2StatusBarItem() {
+function updateO2() {
     let o2Index = findTaskArgs().indexOf("/O2");
-    O2StatusBarItem.text = "O2: " + (o2Index == -1 ? "Off" : "On");
-    O2StatusBarItem.show();
+    O2.text = "O2: " + (o2Index == -1 ? "Off" : "On");
+    O2.show();
 }
 
-function updateZiStatusBarItem() {
+function updateZi() {
     let ziIndex = findTaskArgs().indexOf("/Zi");
-    ZiStatusBarItem.text = "Zi: " + (ziIndex == -1 ? "Off" : "On");
-    ZiStatusBarItem.show();
+    Zi.text = "Zi: " + (ziIndex == -1 ? "Off" : "On");
+    Zi.show();
 }
 
-function updateSubsystemWindowsStatusBarItem() {
+function updateSubsystemWindows() {
     let subsystemIndex = findTaskArgs().indexOf("/subsystem:windows");
-    SubsystemWindowsStatusBarItem.text = "Subsystem: " + (subsystemIndex == -1 ? "Console" : "Windows");
-    SubsystemWindowsStatusBarItem.show();
+    SubsystemWindows.text = "Subsystem: " + (subsystemIndex == -1 ? "Console" : "Windows");
+    SubsystemWindows.show();
 }
 
-function updateArgsStatusBarItem() {
-    ArgsStatusBarItem.text = "Cmdline Args: " + findLaunchArgs()?.join(" ");
-    ArgsStatusBarItem.show();
+function updateArgs() {
+    Args.text = "Cmdline Args: " + findLaunchArgs()?.join(" ");
+    Args.show();
 }
 function activate(context) {
     // underline the whole document with a warning
@@ -45,7 +46,7 @@ function activate(context) {
     // Function to create and add a diagnostic
     function addDiagnostic() {
         // Example range for the text to underline
-        const range = new vscode.Range(5, 0, 5, 10); // Example: line 5, characters 0-10
+        const range = new vscode.Range(5, 1, 5, 10); // Example: line 5, characters 0-10
 
         // Example diagnostic information
         const diagnostic = new vscode.Diagnostic(
@@ -61,25 +62,24 @@ function activate(context) {
     // Example usage: Call the function to add a diagnostic
     addDiagnostic();
 
-
-    console.log(legend);
+    console.log(tokens);
     vscode.languages.registerDocumentSemanticTokensProvider({ language: "pbl" }, new DocumentSemanticTokensProvider(), legend);
 
-    O2StatusBarItem = createStatusBarItem(vscode.StatusBarAlignment.Right, 10000);
-    O2StatusBarItem.command = "extension.toggleO2";
-    updateO2StatusBarItem();
+    O2 = createStatusBarItem(vscode.StatusBarAlignment.Right, 10000);
+    O2.command = "extension.toggleO2";
+    updateO2();
 
-    ZiStatusBarItem = createStatusBarItem(vscode.StatusBarAlignment.Right, 10000);
-    ZiStatusBarItem.command = "extension.toggleZi";
-    updateZiStatusBarItem();
+    Zi = createStatusBarItem(vscode.StatusBarAlignment.Right, 10000);
+    Zi.command = "extension.toggleZi";
+    updateZi();
 
-    SubsystemWindowsStatusBarItem = createStatusBarItem(vscode.StatusBarAlignment.Right, 10000);
-    SubsystemWindowsStatusBarItem.command = "extension.toggleSubsystemWindows";
-    updateSubsystemWindowsStatusBarItem();
+    SubsystemWindows = createStatusBarItem(vscode.StatusBarAlignment.Right, 10000);
+    SubsystemWindows.command = "extension.toggleSubsystemWindows";
+    updateSubsystemWindows();
 
-    ArgsStatusBarItem = createStatusBarItem(vscode.StatusBarAlignment.Right, 10000);
-    ArgsStatusBarItem.command = "extension.changeArgs";
-    updateArgsStatusBarItem();
+    Args = createStatusBarItem(vscode.StatusBarAlignment.Right, 10000);
+    Args.command = "extension.changeArgs";
+    updateArgs();
 
     console.log('Congratulations, your extension "helloworld-minimal-sample" is now active!');
 
@@ -110,7 +110,7 @@ function activate(context) {
         }
         fs.writeFileSync(tasksPath, stringify(tasks, null, 4));
 
-        updateSubsystemWindowsStatusBarItem();
+        updateSubsystemWindows();
     });
 
     // toggle Zi
@@ -132,7 +132,7 @@ function activate(context) {
         }
         fs.writeFileSync(tasksPath, stringify(tasks, null, 4));
 
-        updateZiStatusBarItem();
+        updateZi();
     });
 
     // toggle O2
@@ -157,7 +157,7 @@ function activate(context) {
         }
         fs.writeFileSync(tasksPath, stringify(tasks, null, 4));
 
-        updateO2StatusBarItem();
+        updateO2();
     });
 
     registerCommand("extension.changeArgs", async () => {
@@ -178,7 +178,7 @@ function activate(context) {
         launch.configurations[0].args = newArgs.split(" ");
         fs.writeFileSync(launchPath, stringify(launch, null, 4));
 
-        updateArgsStatusBarItem();
+        updateArgs();
     });
 }
 
@@ -199,71 +199,25 @@ const findLaunchArgs = () => {
 };
 
 const tokenTypes = new Map();
-const tokenModifiers = new Map();
+tokens.forEach((tokenType, index) => tokenTypes.set(tokenType, index));
 
-const legend = (function () {
-    const tokenTypesLegend = [
-        "comment",
-        "string",
-        "keyword",
-        "number",
-        "regexp",
-        "operator",
-        "namespace",
-        "type",
-        "struct",
-        "class",
-        "interface",
-        "enum",
-        "typeParameter",
-        "function",
-        "method",
-        "decorator",
-        "macro",
-        "variable",
-        "parameter",
-        "property",
-        "label",
-    ];
-    tokenTypesLegend.forEach((tokenType, index) => tokenTypes.set(tokenType, index));
-
-    const tokenModifiersLegend = ["declaration", "documentation", "readonly", "static", "abstract", "deprecated", "modification", "async"];
-    tokenModifiersLegend.forEach((tokenModifier, index) => tokenModifiers.set(tokenModifier, index));
-
-    return new vscode.SemanticTokensLegend(tokenTypesLegend, tokenModifiersLegend);
-})();
+const legend = new vscode.SemanticTokensLegend(tokens);
 class DocumentSemanticTokensProvider {
     async provideDocumentSemanticTokens(document, token) {
         const allTokens = this._parseText(document.getText());
         const builder = new vscode.SemanticTokensBuilder();
         allTokens.forEach((token) => {
-            builder.push(token.line, token.startCharacter, token.length, this._encodeTokenType(token.tokenType), this._encodeTokenModifiers(token.tokenModifiers));
+            builder.push(token.line, token.startCharacter, token.length, this._encodeTokenType(token.tokenType), 0);
         });
         return builder.build();
     }
 
     _encodeTokenType(tokenType) {
-        if (tokenTypes.has(tokenType)) {
-            return tokenTypes.get(tokenType);
-        } else if (tokenType === "notInLegend") {
-            return tokenTypes.size + 2;
-        }
-        return 0;
+        if (tokenTypes.has(tokenType)) return tokenTypes.get(tokenType);
+        else return tokenTypes.size + 2;
     }
 
-    _encodeTokenModifiers(strTokenModifiers) {
-        let result = 0;
-        for (let i = 0; i < strTokenModifiers.length; i++) {
-            const tokenModifier = strTokenModifiers[i];
-            if (tokenModifiers.has(tokenModifier)) {
-                result = result | (1 << tokenModifiers.get(tokenModifier));
-            } else if (tokenModifier === "notInLegend") {
-                result = result | (1 << (tokenModifiers.size + 2));
-            }
-        }
-        return result;
-    }
-
+    // takes the text and returns a list of {line, startCharacter, length, tokenType, tokenModifiers}
     _parseText(text) {
         const r = [];
         const lines = text.split(/\r\n|\r|\n/);
