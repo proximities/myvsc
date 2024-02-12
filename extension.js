@@ -38,6 +38,30 @@ function updateArgsStatusBarItem() {
     ArgsStatusBarItem.show();
 }
 function activate(context) {
+    // underline the whole document with a warning
+    // Example diagnostic collection
+    const diagnosticCollection = vscode.languages.createDiagnosticCollection("example");
+
+    // Function to create and add a diagnostic
+    function addDiagnostic() {
+        // Example range for the text to underline
+        const range = new vscode.Range(5, 0, 5, 10); // Example: line 5, characters 0-10
+
+        // Example diagnostic information
+        const diagnostic = new vscode.Diagnostic(
+            range,
+            "This is a diagnostic message", // Message shown when hovering over the underline
+            vscode.DiagnosticSeverity.Error // Severity of the diagnostic (Error, Warning, Information, Hint)
+        );
+
+        // Add the diagnostic to the collection
+        diagnosticCollection.set(vscode.window.activeTextEditor?.document.uri, [diagnostic]);
+    }
+
+    // Example usage: Call the function to add a diagnostic
+    addDiagnostic();
+
+
     console.log(legend);
     vscode.languages.registerDocumentSemanticTokensProvider({ language: "pbl" }, new DocumentSemanticTokensProvider(), legend);
 
@@ -63,22 +87,6 @@ function activate(context) {
     registerRemoveBuildArtifacts();
 
     // __uuidof -> IID_PPV_ARGS
-    registerCommand("extension.replaceUuids", () => {
-        // regex __uuidof\(.*\), reinterpret_cast<void \*\*>\((.*)\)
-        const editor = vscode.window.activeTextEditor;
-        if (!editor) {
-            showInformationMessage("No active text editor");
-        } else {
-            editor.edit((edit) => {
-                let range = new vscode.Range(new vscode.Position(0, 0), new vscode.Position(editor.document.lineCount, 0));
-                let text = editor.document.getText(range);
-
-                let pattern = /__uuidof\(.*\), reinterpret_cast<void \*\*>\((.*)\)/g;
-                text = text.replace(pattern, "IID_PPV_ARGS($1)");
-                edit.replace(range, text);
-            });
-        }
-    });
 
     registerCommand("extension.toggleSubsystemWindows", () => {
         // find .vscode/tasks.json
