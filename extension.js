@@ -41,6 +41,7 @@ function updateArgs() {
 function activate(context) {
 
     console.log(tokens);
+    
     vscode.languages.registerDocumentSemanticTokensProvider({ language: "pbl" }, new DocumentSemanticTokensProvider(), legend);
 
     O2 = createStatusBarItem(vscode.StatusBarAlignment.Right, 10000);
