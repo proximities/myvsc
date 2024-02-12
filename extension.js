@@ -39,28 +39,6 @@ function updateArgs() {
     Args.show();
 }
 function activate(context) {
-    // underline the whole document with a warning
-    // Example diagnostic collection
-    const diagnosticCollection = vscode.languages.createDiagnosticCollection("example");
-
-    // Function to create and add a diagnostic
-    function addDiagnostic() {
-        // Example range for the text to underline
-        const range = new vscode.Range(5, 1, 5, 10); // Example: line 5, characters 0-10
-
-        // Example diagnostic information
-        const diagnostic = new vscode.Diagnostic(
-            range,
-            "This is a diagnostic message", // Message shown when hovering over the underline
-            vscode.DiagnosticSeverity.Error // Severity of the diagnostic (Error, Warning, Information, Hint)
-        );
-
-        // Add the diagnostic to the collection
-        diagnosticCollection.set(vscode.window.activeTextEditor?.document.uri, [diagnostic]);
-    }
-
-    // Example usage: Call the function to add a diagnostic
-    addDiagnostic();
 
     console.log(tokens);
     vscode.languages.registerDocumentSemanticTokensProvider({ language: "pbl" }, new DocumentSemanticTokensProvider(), legend);
