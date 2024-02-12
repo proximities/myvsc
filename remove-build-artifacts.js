@@ -1,14 +1,10 @@
 const vscode = require("vscode");
-const { showInformationMessage, createStatusBarItem } = vscode.window;
 const { registerCommand } = vscode.commands;
 
 // json parsing (default parsing doesn't work with comments)
-const { parse, stringify } = require("comment-json");
 
 const fs = require("fs");
 const path = require("path");
-const registerSubstitute = require("./substitute");
-const registerRemoveBuildArtifacts = require("./remove-build-artifacts");
 
 module.exports = () => {
     registerCommand("extension.removeBuildArtifacts", async () => {
@@ -17,7 +13,7 @@ module.exports = () => {
 
     let workspacePath = vscode.workspace.workspaceFolders[0].uri.fsPath;
     let buildPaths = [path.join(workspacePath, "build"), path.join(workspacePath, "out")];
-    for (p of buildPaths) {
+    for (let p of buildPaths) {
         if (fs.existsSync(p)) {
             fs.rmdirSync(p, {
                 recursive: true,
@@ -42,7 +38,7 @@ module.exports = () => {
             f.endsWith(".iobj") ||
             f.endsWith(".log")
     );
-    for (a of artifacts) {
+    for (let a of artifacts) {
         fs.unlinkSync(path.join(workspacePath, a));
     }
 });
